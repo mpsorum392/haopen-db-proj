@@ -365,6 +365,7 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
       });
       if (res.status === 401) { setErrorMsg('Wrong PIN'); return; }
       if (!res.ok) { setErrorMsg('Error saving progress'); return; }
+      setOpenPanelId(null);
       onMatchUpdate();
     } finally {
       setSubmitting(false);
@@ -468,7 +469,10 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
             {status === 'in_progress' && (
               <div className="text-center">
                 {match.progress_leader === 'All Square' ? (
-                  <p className="text-[9px] md:text-xs font-mono text-white/60 text-center">All Square</p>
+                  <>
+                    <p className="text-[9px] md:text-xs font-mono text-white/60 text-center">All Square</p>
+                    <p className="text-[8px] font-mono text-white/30 text-center">thru {match.holes_played}</p>
+                  </>
                 ) : (
                   <>
                     <p className={`text-[9px] md:text-xs font-mono font-bold text-center ${match.progress_leader?.includes('Blue') ? 'text-blue-400' : 'text-pink-400'}`}>
