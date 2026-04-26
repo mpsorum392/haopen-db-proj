@@ -15,6 +15,10 @@ export interface Match {
   blue_score: number;
   pink_score: number;
   winner: string | null;
+  status?: 'pending' | 'in_progress' | 'final';
+  progress_leader?: string | null;
+  holes_up?: number;
+  holes_played?: number;
 }
 
 export type TabType = 'home' | 'crew' | 'leaderboard' | 'matchups' | 'schedule' | 'rules' | 'archive';

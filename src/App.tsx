@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Trophy,
@@ -34,10 +34,23 @@ import spiritHollowPhoto from '../images/spirit_hollow_photo.jpg';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
-  const matches = INITIAL_MATCHES;
+  const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
 
-  const bluePoints = matches.reduce((acc: number, m: Match) => acc + m.blue_score * (m.match_type === '2v2' ? 2 : 1), 0);
-  const pinkPoints = matches.reduce((acc: number, m: Match) => acc + m.pink_score * (m.match_type === '2v2' ? 2 : 1), 0);
+  const fetchMatches = async () => {
+    try {
+      const res = await fetch('/api/matches');
+      if (res.ok) setMatches(await res.json());
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchMatches();
+    const id = setInterval(fetchMatches, 30000);
+    return () => clearInterval(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const bluePoints = matches.filter(m => m.status === 'final').reduce((acc: number, m: Match) => acc + m.blue_score * (m.match_type === '2v2' ? 2 : 1), 0);
+  const pinkPoints = matches.filter(m => m.status === 'final').reduce((acc: number, m: Match) => acc + m.pink_score * (m.match_type === '2v2' ? 2 : 1), 0);
 
   const navItems = [
     { id: 'home',        label: 'Home',        mobileLabel: 'Home',    icon: Home },
@@ -121,7 +134,7 @@ export default function App() {
             {activeTab === 'home' && <HomeView bluePoints={bluePoints} pinkPoints={pinkPoints} />}
             {activeTab === 'crew' && <CrewView />}
             {activeTab === 'leaderboard' && <LeaderboardView matches={matches} />}
-            {activeTab === 'matchups' && <MatchupsView matches={matches} handicapMap={Object.fromEntries(CREW.map(p => [p.name.split(' ').pop()!, p.handicap]))} />}
+            {activeTab === 'matchups' && <MatchupsView matches={matches} handicapMap={Object.fromEntries(CREW.map(p => [p.name.split(' ').pop()!, p.handicap]))} onMatchUpdate={fetchMatches} />}
             {activeTab === 'schedule' && <ScheduleView />}
             {activeTab === 'rules' && <RulesView />}
             {activeTab === 'archive' && <ArchiveView />}
@@ -246,7 +259,7 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
 
   const getPointsByDay = (day: string, team: string) => {
     return matches
-      .filter(m => m.day === day)
+      .filter(m => m.day === day && m.status === 'final')
       .reduce((acc, m) => {
         const score = team === 'Blue Hackers' ? m.blue_score : m.pink_score;
         return acc + score * (m.match_type === '2v2' ? 2 : 1);
@@ -317,8 +330,15 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
   );
 }
 
-function MatchupsView({ matches, handicapMap }: { matches: Match[], handicapMap: Record<string, number> }) {
+function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[], handicapMap: Record<string, number>, onMatchUpdate: () => void }) {
   const [selectedDay, setSelectedDay] = useState<'Thursday' | 'Friday' | 'Saturday'>('Thursday');
+  const [openPanelId, setOpenPanelId] = useState<number | null>(null);
+  const [pin, setPin] = useState(() => sessionStorage.getItem('scoring-pin') || '');
+  const [progressLeader, setProgressLeader] = useState('All Square');
+  const [holesUp, setHolesUp] = useState(0);
+  const [holesPlayed, setHolesPlayed] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const front9Matches = matches.filter(m => m.day === selectedDay && m.session === 'Front 9');
   const back9Matches = matches.filter(m => m.day === selectedDay && m.session === 'Back 9');
@@ -329,66 +349,259 @@ function MatchupsView({ matches, handicapMap }: { matches: Match[], handicapMap:
     return Math.round((hcps[0] * 0.35 + hcps[1] * 0.15) / 2);
   };
 
+  const handlePinChange = (val: string) => {
+    setPin(val);
+    sessionStorage.setItem('scoring-pin', val);
+  };
+
+  const handleProgress = async (matchId: number) => {
+    setErrorMsg('');
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/matches/${matchId}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, progress_leader: progressLeader, holes_up: holesUp, holes_played: holesPlayed }),
+      });
+      if (res.status === 401) { setErrorMsg('Wrong PIN'); return; }
+      if (!res.ok) { setErrorMsg('Error saving progress'); return; }
+      onMatchUpdate();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResult = async (matchId: number, winner: string) => {
+    setErrorMsg('');
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/matches/${matchId}/result`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, winner }),
+      });
+      if (res.status === 401) { setErrorMsg('Wrong PIN'); return; }
+      if (!res.ok) { setErrorMsg('Error submitting result'); return; }
+      setOpenPanelId(null);
+      onMatchUpdate();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReset = async (matchId: number) => {
+    setErrorMsg('');
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/matches/${matchId}/result`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      if (res.status === 401) { setErrorMsg('Wrong PIN'); return; }
+      if (!res.ok) { setErrorMsg('Error resetting match'); return; }
+      onMatchUpdate();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const renderMatch = (match: Match) => {
     const blueHcp = totalHcp(match.team_blue_players, match.match_type);
     const pinkHcp = totalHcp(match.team_pink_players, match.match_type);
     const hcpLabel = match.match_type === '1v1' ? 'Player HCP(9H)' : 'Team HCP(9H)';
+    const status = match.status ?? 'pending';
+    const isOpen = openPanelId === match.id;
+
     return (
-      <div key={match.id} className="glass-panel rounded-2xl overflow-hidden flex flex-row group hover:border-white/20 transition-all">
-        <div className="p-3 md:p-5 flex-1 border-r border-white/10">
-          <div className="flex justify-between items-start mb-2 md:mb-6">
-            <span className="text-[10px] font-mono uppercase bg-white/10 px-2 py-0.5 md:px-3 md:py-1 rounded-lg font-bold">{match.match_type}</span>
-            <span className="text-[10px] md:text-md font-display font-medium opacity-40">{match.session}</span>
+      <div key={match.id} className="glass-panel rounded-2xl overflow-hidden group hover:border-white/20 transition-all">
+        <div className="flex flex-row">
+          <div className="p-3 md:p-5 flex-1 border-r border-white/10">
+            <div className="flex justify-between items-start mb-2 md:mb-6">
+              <span className="text-[10px] font-mono uppercase bg-white/10 px-2 py-0.5 md:px-3 md:py-1 rounded-lg font-bold">{match.match_type}</span>
+              <span className="text-[10px] md:text-md font-display font-medium opacity-40">{match.session}</span>
+            </div>
+
+            <div className="flex flex-row items-start gap-2 md:gap-4">
+              <div className="space-y-0.5 md:space-y-1 flex-1">
+                <p className="text-[9px] md:text-[10px] font-mono uppercase text-blue-400 font-bold tracking-widest">Blue</p>
+                {match.team_blue_players.map(p => (
+                  <p key={p} className="text-sm md:text-xl font-display font-bold leading-tight">
+                    {p} <span className="text-[10px] md:text-sm font-mono text-blue-400/60">({handicapMap[p] ?? '?'})</span>
+                  </p>
+                ))}
+                {match.team_blue_players.length > 0 && (
+                  <p className="text-[10px] md:text-sm font-mono text-blue-400/60 pt-0.5 md:pt-1">{hcpLabel}: {blueHcp}</p>
+                )}
+              </div>
+
+              <div className="text-[10px] font-mono opacity-20 font-bold px-1 pt-3">VS</div>
+
+              <div className="space-y-0.5 md:space-y-1 text-right flex-1">
+                <p className="text-[9px] md:text-[10px] font-mono uppercase text-pink-400 font-bold tracking-widest">Pink</p>
+                {match.team_pink_players.map(p => (
+                  <p key={p} className="text-sm md:text-xl font-display font-bold leading-tight">
+                    {p} <span className="text-[10px] md:text-sm font-mono text-pink-400/60">({handicapMap[p] ?? '?'})</span>
+                  </p>
+                ))}
+                {match.team_pink_players.length > 0 && (
+                  <p className="text-[10px] md:text-sm font-mono text-pink-400/60 pt-0.5 md:pt-1">{hcpLabel}: {pinkHcp}</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-row items-start gap-2 md:gap-4">
-            <div className="space-y-0.5 md:space-y-1 flex-1">
-              <p className="text-[9px] md:text-[10px] font-mono uppercase text-blue-400 font-bold tracking-widest">Blue</p>
-              {match.team_blue_players.map(p => (
-                <p key={p} className="text-sm md:text-xl font-display font-bold leading-tight">
-                  {p} <span className="text-[10px] md:text-sm font-mono text-blue-400/60">({handicapMap[p] ?? '?'})</span>
-                </p>
-              ))}
-              {match.team_blue_players.length > 0 && (
-                <p className="text-[10px] md:text-sm font-mono text-blue-400/60 pt-0.5 md:pt-1">{hcpLabel}: {blueHcp}</p>
-              )}
-            </div>
+          <div className="p-3 md:p-8 bg-white/5 w-20 md:w-48 flex flex-col justify-center items-center gap-1.5 md:gap-3">
+            {status === 'in_progress' && (
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-[8px] font-mono text-green-400 uppercase">Live</span>
+              </div>
+            )}
+            {status === 'final' && (
+              <span className="text-[8px] font-mono text-white/30 uppercase">Final</span>
+            )}
 
-            <div className="text-[10px] font-mono opacity-20 font-bold px-1 pt-3">VS</div>
+            {status === 'pending' && (
+              <p className="text-[10px] md:text-md font-mono opacity-20 italic">TBD</p>
+            )}
+            {status === 'in_progress' && (
+              <div className="text-center">
+                {match.progress_leader === 'All Square' ? (
+                  <p className="text-[9px] md:text-xs font-mono text-white/60 text-center">All Square</p>
+                ) : (
+                  <>
+                    <p className={`text-[9px] md:text-xs font-mono font-bold text-center ${match.progress_leader?.includes('Blue') ? 'text-blue-400' : 'text-pink-400'}`}>
+                      {match.progress_leader?.split(' ')[0]} up {match.holes_up}
+                    </p>
+                    <p className="text-[8px] font-mono text-white/30 text-center">thru {match.holes_played}</p>
+                  </>
+                )}
+              </div>
+            )}
+            {status === 'final' && (
+              <>
+                <div className="flex items-center gap-1.5 md:gap-4">
+                  <span className="text-xl md:text-4xl font-display font-bold text-blue-400">{match.blue_score}</span>
+                  <span className="text-xs md:text-xl opacity-20 font-display">:</span>
+                  <span className="text-xl md:text-4xl font-display font-bold text-pink-400">{match.pink_score}</span>
+                </div>
+                {match.winner && (
+                  <div className={`px-2 md:px-4 py-0.5 md:py-1 rounded-full text-[8px] md:text-[10px] font-mono uppercase font-bold ${
+                    match.winner === 'Draw' ? 'bg-white/10 text-white/60' : match.winner.includes('Blue') ? 'bg-blue-500 text-white' : 'bg-pink-500 text-white'
+                  }`}>
+                    {match.winner === 'Draw' ? 'Halved' : `${match.winner.split(' ')[0]} Wins`}
+                  </div>
+                )}
+              </>
+            )}
 
-            <div className="space-y-0.5 md:space-y-1 text-right flex-1">
-              <p className="text-[9px] md:text-[10px] font-mono uppercase text-pink-400 font-bold tracking-widest">Pink</p>
-              {match.team_pink_players.map(p => (
-                <p key={p} className="text-sm md:text-xl font-display font-bold leading-tight">
-                  {p} <span className="text-[10px] md:text-sm font-mono text-pink-400/60">({handicapMap[p] ?? '?'})</span>
-                </p>
-              ))}
-              {match.team_pink_players.length > 0 && (
-                <p className="text-[10px] md:text-sm font-mono text-pink-400/60 pt-0.5 md:pt-1">{hcpLabel}: {pinkHcp}</p>
-              )}
-            </div>
+            <button
+              onClick={() => { setOpenPanelId(isOpen ? null : match.id); setErrorMsg(''); }}
+              className="mt-1 text-[8px] font-mono text-white/25 hover:text-white/60 transition-colors uppercase"
+            >
+              {status === 'final' ? 'Edit' : 'Update'}
+            </button>
           </div>
         </div>
 
-        <div className="p-3 md:p-8 bg-white/5 w-20 md:w-48 flex flex-col justify-center items-center gap-1.5 md:gap-3">
-          <p className="text-[9px] md:text-[15px] font-mono uppercase opacity-60 font-bold">Score</p>
-          {match.blue_score === 0 && match.pink_score === 0 ? (
-            <p className="text-[10px] md:text-md font-mono opacity-20 italic">TBD</p>
-          ) : (
-            <div className="flex items-center gap-1.5 md:gap-4">
-              <span className="text-xl md:text-4xl font-display font-bold text-blue-400">{match.blue_score}</span>
-              <span className="text-xs md:text-xl opacity-20 font-display">:</span>
-              <span className="text-xl md:text-4xl font-display font-bold text-pink-400">{match.pink_score}</span>
+        {isOpen && (
+          <div className="border-t border-white/10 p-4 md:p-6 bg-white/[0.03] space-y-4">
+            {errorMsg && <p className="text-red-400 text-xs font-mono">{errorMsg}</p>}
+
+            <div className="flex items-center gap-3">
+              <label className="text-[10px] font-mono uppercase text-white/40">PIN</label>
+              <input
+                type="password"
+                value={pin}
+                onChange={e => handlePinChange(e.target.value)}
+                placeholder="Enter PIN"
+                maxLength={10}
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm font-mono text-white placeholder-white/20 focus:outline-none focus:border-white/40 w-32"
+              />
             </div>
-          )}
-          {match.winner && (
-            <div className={`px-2 md:px-4 py-0.5 md:py-1 rounded-full text-[8px] md:text-[10px] font-mono uppercase font-bold ${
-              match.winner === 'Draw' ? 'bg-white/10 text-white/60' : match.winner.includes('Blue') ? 'bg-blue-500 text-white' : 'bg-pink-500 text-white'
-            }`}>
-              {match.winner === 'Draw' ? 'Halved' : `${match.winner.split(' ')[0]} Wins`}
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-mono uppercase text-white/30 border-b border-white/10 pb-1">Live Progress</p>
+              <div className="flex flex-wrap gap-2 items-center">
+                <select
+                  value={progressLeader}
+                  onChange={e => setProgressLeader(e.target.value)}
+                  className="bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none"
+                >
+                  <option value="Blue Hackers">Blue Hackers</option>
+                  <option value="All Square">All Square</option>
+                  <option value="Pink Addicts">Pink Addicts</option>
+                </select>
+                <span className="text-[10px] font-mono text-white/30">up</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={9}
+                  value={holesUp}
+                  onChange={e => setHolesUp(Number(e.target.value))}
+                  disabled={progressLeader === 'All Square'}
+                  className="w-14 bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none disabled:opacity-30 text-center"
+                />
+                <span className="text-[10px] font-mono text-white/30">thru hole</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={9}
+                  value={holesPlayed}
+                  onChange={e => setHolesPlayed(Number(e.target.value))}
+                  className="w-14 bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none text-center"
+                />
+                <button
+                  onClick={() => handleProgress(match.id)}
+                  disabled={submitting}
+                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-[10px] font-mono uppercase text-white/60 hover:text-white transition-all disabled:opacity-30"
+                >
+                  {submitting ? '...' : 'Save'}
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-mono uppercase text-white/30 border-b border-white/10 pb-1">Final Result</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleResult(match.id, 'Blue Hackers')}
+                  disabled={submitting}
+                  className="flex-1 py-2 bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 rounded-lg text-xs font-mono font-bold text-blue-400 hover:text-blue-300 transition-all disabled:opacity-30"
+                >
+                  Blue Wins
+                </button>
+                <button
+                  onClick={() => handleResult(match.id, 'Draw')}
+                  disabled={submitting}
+                  className="flex-1 py-2 bg-white/5 hover:bg-white/15 border border-white/20 rounded-lg text-xs font-mono font-bold text-white/60 hover:text-white transition-all disabled:opacity-30"
+                >
+                  Halved
+                </button>
+                <button
+                  onClick={() => handleResult(match.id, 'Pink Addicts')}
+                  disabled={submitting}
+                  className="flex-1 py-2 bg-pink-500/20 hover:bg-pink-500/40 border border-pink-500/30 rounded-lg text-xs font-mono font-bold text-pink-400 hover:text-pink-300 transition-all disabled:opacity-30"
+                >
+                  Pink Wins
+                </button>
+              </div>
+            </div>
+
+            {status === 'final' && (
+              <div className="pt-1 border-t border-white/5">
+                <button
+                  onClick={() => handleReset(match.id)}
+                  disabled={submitting}
+                  className="text-[9px] font-mono text-white/20 hover:text-red-400 transition-colors uppercase"
+                >
+                  Reset Match
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };

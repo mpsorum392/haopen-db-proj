@@ -1,10 +1,17 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+// @ts-ignore
+import { initDb } from './db.js';
+// @ts-ignore
+import { registerApiRoutes } from './api.js';
 
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
+
+  app.use(express.json());
+  registerApiRoutes(app);
 
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -18,6 +25,8 @@ async function startServer() {
       res.sendFile(path.resolve(__dirname, "dist", "index.html"));
     });
   }
+
+  await initDb();
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
