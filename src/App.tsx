@@ -339,6 +339,7 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
   const [holesPlayed, setHolesPlayed] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [matchContext, setMatchContext] = useState('');
 
   const front9Matches = matches.filter(m => m.day === selectedDay && m.session === 'Front 9');
   const back9Matches = matches.filter(m => m.day === selectedDay && m.session === 'Back 9');
@@ -372,14 +373,14 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
     }
   };
 
-  const handleResult = async (matchId: number, winner: string) => {
+  const handleResult = async (matchId: number, winner: string, context = '') => {
     setErrorMsg('');
     setSubmitting(true);
     try {
       const res = await fetch(`/api/matches/${matchId}/result`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, winner }),
+        body: JSON.stringify({ pin, winner, match_context: context || null }),
       });
       if (res.status === 401) { setErrorMsg('Wrong PIN'); return; }
       if (!res.ok) { setErrorMsg('Error submitting result'); return; }
@@ -491,17 +492,18 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
                   <span className="text-xl md:text-4xl font-display font-bold text-pink-400">{match.pink_score}</span>
                 </div>
                 {match.winner && (
-                  <div className={`px-2 md:px-4 py-0.5 md:py-1 rounded-full text-[8px] md:text-[10px] font-mono uppercase font-bold ${
+                  <div className={`px-2 md:px-4 py-0.5 md:py-1 rounded-xl text-[8px] md:text-[10px] font-mono uppercase font-bold text-center ${
                     match.winner === 'Draw' ? 'bg-white/10 text-white/60' : match.winner.includes('Blue') ? 'bg-blue-500 text-white' : 'bg-pink-500 text-white'
                   }`}>
-                    {match.winner === 'Draw' ? 'Halved' : `${match.winner.split(' ')[0]} Wins`}
+                    <div>{match.winner === 'Draw' ? 'Halved' : `${match.winner.split(' ')[0]} Wins`}</div>
+                    {match.match_context && <div className="font-normal normal-case opacity-90 mt-0.5">{match.match_context}</div>}
                   </div>
                 )}
               </>
             )}
 
             <button
-              onClick={() => { setOpenPanelId(isOpen ? null : match.id); setErrorMsg(''); }}
+              onClick={() => { setOpenPanelId(isOpen ? null : match.id); setErrorMsg(''); setMatchContext(''); }}
               className="mt-1 text-[8px] font-mono text-white/25 hover:text-white/60 transition-colors uppercase"
             >
               {status === 'final' ? 'Edit' : 'Update'}
@@ -567,9 +569,16 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
 
             <div className="space-y-2">
               <p className="text-[10px] font-mono uppercase text-white/30 border-b border-white/10 pb-1">Final Result</p>
+              <input
+                type="text"
+                value={matchContext}
+                onChange={e => setMatchContext(e.target.value.slice(0, 5))}
+                placeholder="Score e.g. 4&3 (optional, wins only)"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-white/20 focus:outline-none focus:border-white/20"
+              />
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleResult(match.id, 'Blue Hackers')}
+                  onClick={() => handleResult(match.id, 'Blue Hackers', matchContext)}
                   disabled={submitting}
                   className="flex-1 py-2 bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 rounded-lg text-xs font-mono font-bold text-blue-400 hover:text-blue-300 transition-all disabled:opacity-30"
                 >
@@ -583,7 +592,7 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
                   Halved
                 </button>
                 <button
-                  onClick={() => handleResult(match.id, 'Pink Addicts')}
+                  onClick={() => handleResult(match.id, 'Pink Addicts', matchContext)}
                   disabled={submitting}
                   className="flex-1 py-2 bg-pink-500/20 hover:bg-pink-500/40 border border-pink-500/30 rounded-lg text-xs font-mono font-bold text-pink-400 hover:text-pink-300 transition-all disabled:opacity-30"
                 >

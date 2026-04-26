@@ -60,12 +60,13 @@ export function registerApiRoutes(app) {
     if (!scoreMap[winner]) return res.status(400).json({ error: 'Invalid winner value' });
 
     const { blue_score, pink_score } = scoreMap[winner];
+    const match_context = winner === 'Draw' ? null : (req.body.match_context ?? null);
     try {
       await pool.query(
         `UPDATE matches
-         SET status = 'final', winner = $1, blue_score = $2, pink_score = $3, finalized_at = NOW()
-         WHERE id = $4`,
-        [winner, blue_score, pink_score, req.params.id]
+         SET status = 'final', winner = $1, blue_score = $2, pink_score = $3, finalized_at = NOW(), match_context = $4
+         WHERE id = $5`,
+        [winner, blue_score, pink_score, match_context, req.params.id]
       );
       res.json({ ok: true });
     } catch (err) {
@@ -82,7 +83,7 @@ export function registerApiRoutes(app) {
       await pool.query(
         `UPDATE matches
          SET status = 'pending', winner = NULL, blue_score = 0, pink_score = 0,
-             finalized_at = NULL, progress_leader = NULL, holes_up = 0, holes_played = 0
+             finalized_at = NULL, progress_leader = NULL, holes_up = 0, holes_played = 0, match_context = NULL
          WHERE id = $1`,
         [req.params.id]
       );

@@ -19,6 +19,7 @@ export interface Match {
   progress_leader?: string | null;
   holes_up?: number;
   holes_played?: number;
+  match_context?: string | null;
 }
 
 export type TabType = 'home' | 'crew' | 'leaderboard' | 'matchups' | 'schedule' | 'rules' | 'archive';

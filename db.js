@@ -62,5 +62,9 @@ export async function initDb() {
     );
   }
 
+  await pool.query(`
+    ALTER TABLE matches ADD COLUMN IF NOT EXISTS match_context VARCHAR(5)
+  `);
+
   console.log('Database ready');
 }
