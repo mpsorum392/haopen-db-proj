@@ -521,6 +521,7 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
                 onChange={e => handlePinChange(e.target.value)}
                 placeholder="Enter PIN"
                 maxLength={10}
+                autoComplete="new-password"
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm font-mono text-white placeholder-white/20 focus:outline-none focus:border-white/40 w-32"
               />
             </div>
@@ -538,24 +539,22 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
                   <option value="Pink Addicts">Pink Addicts</option>
                 </select>
                 <span className="text-[10px] font-mono text-white/30">up</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={9}
+                <select
                   value={holesUp}
                   onChange={e => setHolesUp(Number(e.target.value))}
                   disabled={progressLeader === 'All Square'}
-                  className="w-14 bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none disabled:opacity-30 text-center"
-                />
+                  className="bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none disabled:opacity-30"
+                >
+                  {[0,1,2,3,4,5,6,7,8,9].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
                 <span className="text-[10px] font-mono text-white/30">thru hole</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={9}
+                <select
                   value={holesPlayed}
                   onChange={e => setHolesPlayed(Number(e.target.value))}
-                  className="w-14 bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none text-center"
-                />
+                  className="bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none"
+                >
+                  {[1,2,3,4,5,6,7,8,9].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
                 <button
                   onClick={() => handleProgress(match.id)}
                   disabled={submitting}
