@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Home,
   ChevronRight,
+  ChevronDown,
   MapPin,
   ShieldCheck,
   Gift,
@@ -256,6 +257,7 @@ function HomeView({ bluePoints, pinkPoints }: { bluePoints: number, pinkPoints: 
 
 function LeaderboardView({ matches }: { matches: Match[] }) {
   const days = ['Thursday', 'Friday', 'Saturday'];
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
   const getPointsByDay = (day: string, team: string) => {
     return matches
@@ -266,6 +268,20 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
       }, 0);
   };
 
+  const getDayMatches = (day: string) =>
+    matches
+      .filter(m => m.day === day && m.status === 'final')
+      .sort((a, b) => {
+        if (a.session === b.session) return a.id - b.id;
+        return a.session === 'Front 9' ? -1 : 1;
+      });
+
+  const handleDayClick = (day: string) => {
+    setExpandedDay(prev => (prev === day ? null : day));
+  };
+
+  const expandedMatches = expandedDay ? getDayMatches(expandedDay) : [];
+
   return (
     <div className="space-y-8">
       <div className="glass-panel rounded-3xl overflow-hidden">
@@ -275,7 +291,7 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
           <div className="text-center">Fri</div>
           <div className="text-center">Sat</div>
         </div>
-                <div className="divide-y divide-white/5">
+        <div className="divide-y divide-white/5">
           <div className="grid grid-cols-5 p-6 items-center hover:bg-white/5 transition-colors">
             <div className="col-span-2 flex items-center gap-3">
               <div className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
@@ -302,9 +318,17 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
           const blue = getPointsByDay(day, 'Blue Hackers');
           const pink = getPointsByDay(day, 'Pink Addicts');
           const winner = blue > pink ? 'Blue' : pink > blue ? 'Pink' : 'Draw';
+          const isExpanded = expandedDay === day;
+          const finalCount = matches.filter(m => m.day === day && m.status === 'final').length;
 
           return (
-            <div key={day} className="glass-panel p-6 rounded-3xl relative overflow-hidden group">
+            <div
+              key={day}
+              onClick={() => handleDayClick(day)}
+              className={`glass-panel p-6 rounded-3xl relative overflow-hidden cursor-pointer transition-all select-none ${
+                isExpanded ? 'ring-1 ring-white/30' : 'hover:bg-white/5'
+              }`}
+            >
               <div className={`absolute top-0 right-0 p-2 text-[8px] font-mono uppercase font-bold ${
                 winner === 'Blue' ? 'bg-blue-500 text-white' : winner === 'Pink' ? 'bg-pink-500 text-white' : 'bg-white/10'
               }`}>
@@ -322,10 +346,96 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
                   <p className="text-4xl font-display font-bold text-pink-400">{pink}</p>
                 </div>
               </div>
+              <div className="flex items-center justify-center gap-1.5 mt-4 pt-3 border-t border-white/10">
+                {finalCount > 0 && (
+                  <span className="text-[9px] font-mono opacity-30 uppercase tracking-widest">{finalCount} matches</span>
+                )}
+                <span className="text-[9px] font-mono uppercase tracking-widest opacity-40">Details</span>
+                <ChevronDown
+                  size={12}
+                  className={`opacity-30 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                />
+              </div>
             </div>
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {expandedDay && (
+          <motion.div
+            key={expandedDay}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="glass-panel rounded-3xl overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-6 py-4 bg-white/5 border-b border-white/10">
+              <span className="font-mono text-[10px] uppercase tracking-widest opacity-60">{expandedDay} — Match Details</span>
+              <button
+                onClick={() => setExpandedDay(null)}
+                className="text-[9px] font-mono uppercase opacity-30 hover:opacity-60 transition-colors tracking-wider"
+              >
+                Collapse
+              </button>
+            </div>
+
+            {expandedMatches.length === 0 ? (
+              <div className="px-6 py-8 text-center text-[11px] font-mono opacity-25 uppercase tracking-widest">
+                No results yet
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {expandedMatches.map(match => {
+                  const blueWon = match.winner === 'Blue Hackers';
+                  const pinkWon = match.winner === 'Pink Addicts';
+                  const isDraw = !blueWon && !pinkWon;
+
+                  const blueLabel = match.team_blue_players.join(' + ');
+                  const pinkLabel = match.team_pink_players.join(' + ');
+
+                  return (
+                    <div key={match.id} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[8px] font-mono uppercase tracking-widest opacity-30 w-14">{match.session}</span>
+                        <span className="text-[8px] font-mono uppercase bg-white/10 px-1.5 py-0.5 rounded opacity-50">{match.match_type}</span>
+                      </div>
+
+                      <div className="flex-1 flex items-center gap-3 min-w-0">
+                        <span className={`text-sm font-semibold truncate flex-1 text-right ${blueWon ? 'text-blue-400' : 'opacity-50'}`}>
+                          {blueLabel}
+                        </span>
+                        <div className="shrink-0 text-center">
+                          <span className={`font-mono text-base font-bold ${blueWon ? 'text-blue-400' : 'opacity-40'}`}>{match.blue_score}</span>
+                          <span className="font-mono text-xs opacity-20 mx-1">–</span>
+                          <span className={`font-mono text-base font-bold ${pinkWon ? 'text-pink-400' : 'opacity-40'}`}>{match.pink_score}</span>
+                        </div>
+                        <span className={`text-sm font-semibold truncate flex-1 ${pinkWon ? 'text-pink-400' : 'opacity-50'}`}>
+                          {pinkLabel}
+                        </span>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-2">
+                        <span className={`text-[8px] font-mono uppercase px-2 py-0.5 rounded font-bold ${
+                          blueWon ? 'bg-blue-500/20 text-blue-400' :
+                          pinkWon ? 'bg-pink-500/20 text-pink-400' :
+                          'bg-white/10 opacity-40'
+                        }`}>
+                          {isDraw ? 'Draw' : blueWon ? 'Blue Win' : 'Pink Win'}
+                        </span>
+                        {match.match_context && (
+                          <span className="text-[9px] font-mono opacity-30">{match.match_context}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
