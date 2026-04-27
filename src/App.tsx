@@ -403,7 +403,7 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
                   {finalCount > 0 && (
                     <span className="text-[9px] font-mono opacity-30 uppercase tracking-widest">{finalCount} matches</span>
                   )}
-                  <span className="text-[9px] font-mono uppercase tracking-widest opacity-40">Details</span>
+                  <span className="text-[9px] font-mono uppercase tracking-widest text-white">Details</span>
                   <ChevronDown
                     size={12}
                     className={`opacity-30 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
@@ -625,9 +625,9 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
             {status === 'final' && (
               <>
                 <div className="flex items-center gap-1.5 md:gap-4">
-                  <span className="text-xl md:text-4xl font-display font-bold text-blue-400">{match.blue_score}</span>
+                  <span className="text-base md:text-4xl font-display font-bold text-blue-400">{match.blue_score * (match.match_type === '2v2' ? 2 : 1)}</span>
                   <span className="text-xs md:text-xl opacity-20 font-display">:</span>
-                  <span className="text-xl md:text-4xl font-display font-bold text-pink-400">{match.pink_score}</span>
+                  <span className="text-base md:text-4xl font-display font-bold text-pink-400">{match.pink_score * (match.match_type === '2v2' ? 2 : 1)}</span>
                 </div>
                 {match.winner && (
                   <div className={`px-2 md:px-4 py-0.5 md:py-1 rounded-xl text-[8px] md:text-[10px] font-mono uppercase font-bold text-center ${
@@ -642,7 +642,7 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
 
             <button
               onClick={() => { setOpenPanelId(isOpen ? null : match.id); setErrorMsg(''); setMatchContext(''); }}
-              className="mt-1 text-[8px] font-mono text-white/25 hover:text-white/60 transition-colors uppercase"
+              className="mt-1 text-[8px] font-mono text-white hover:text-white/80 transition-colors uppercase"
             >
               {status === 'final' ? 'Edit' : 'Update'}
             </button>
