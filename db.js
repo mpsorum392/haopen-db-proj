@@ -66,5 +66,15 @@ export async function initDb() {
     ALTER TABLE matches ADD COLUMN IF NOT EXISTS match_context VARCHAR(5)
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stroke_scores (
+      id         SERIAL PRIMARY KEY,
+      match_id   INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+      player     VARCHAR(30) NOT NULL,
+      gross      INTEGER NOT NULL,
+      UNIQUE (match_id, player)
+    )
+  `);
+
   console.log('Database ready');
 }

@@ -1,5 +1,10 @@
 import { pool } from './db.js';
 
+const HANDICAPS = {
+  Swart: 4, Thompson: 9, Wakefield: 11, Fitzke: 12, Rohrbaugh: 14,
+  Sorum: 7, Fabian: 12, DeMarco: 16, Koehler: 18, Kardell: 20,
+};
+
 function parseMatch(row) {
   return {
     ...row,
@@ -80,6 +85,7 @@ export function registerApiRoutes(app) {
     if (!SCORING_PIN || pin !== SCORING_PIN) return res.status(401).json({ error: 'Invalid PIN' });
 
     try {
+      await pool.query('DELETE FROM stroke_scores WHERE match_id = $1', [req.params.id]);
       await pool.query(
         `UPDATE matches
          SET status = 'pending', winner = NULL, blue_score = 0, pink_score = 0,
@@ -90,6 +96,57 @@ export function registerApiRoutes(app) {
       res.json({ ok: true });
     } catch (err) {
       console.error('DELETE /api/matches/:id/result:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  app.post('/api/matches/:id/strokes', async (req, res) => {
+    const { pin, scores } = req.body;
+    if (!SCORING_PIN || pin !== SCORING_PIN) return res.status(401).json({ error: 'Invalid PIN' });
+    if (!Array.isArray(scores) || scores.length === 0) return res.status(400).json({ error: 'scores array required' });
+
+    for (const s of scores) {
+      if (!(s.player in HANDICAPS)) return res.status(400).json({ error: `Unknown player: ${s.player}` });
+      const g = parseInt(s.gross, 10);
+      if (isNaN(g) || g < 27 || g > 72) return res.status(400).json({ error: `Invalid gross score for ${s.player}` });
+    }
+
+    try {
+      for (const s of scores) {
+        await pool.query(
+          `INSERT INTO stroke_scores (match_id, player, gross)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (match_id, player) DO UPDATE SET gross = EXCLUDED.gross`,
+          [req.params.id, s.player, parseInt(s.gross, 10)]
+        );
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('POST /api/matches/:id/strokes:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  app.get('/api/strokes', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT s.match_id, s.player, s.gross, m.match_type
+        FROM stroke_scores s
+        JOIN matches m ON m.id = s.match_id
+        ORDER BY s.match_id, s.player
+      `);
+      const rows = result.rows.map(r => ({
+        match_id:   r.match_id,
+        player:     r.player,
+        gross:      parseInt(r.gross, 10),
+        net:        r.match_type === '1v1'
+                      ? parseInt(r.gross, 10) - Math.round((HANDICAPS[r.player] ?? 0) / 2)
+                      : null,
+        match_type: r.match_type,
+      }));
+      res.json(rows);
+    } catch (err) {
+      console.error('GET /api/strokes:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });

@@ -16,7 +16,7 @@ import {
   ThumbsDown,
   BookOpen,
 } from 'lucide-react';
-import { TabType, Match } from './types';
+import { TabType, Match, StrokeScore } from './types';
 import { RULES, PRIZES, SCHEDULE, INITIAL_MATCHES, ARCHIVE_DATA } from './constants';
 import mikePic    from '../images/mike-pic.jpeg';
 import swartPic   from '../images/swart-pic.jpeg';
@@ -36,6 +36,7 @@ import spiritHollowPhoto from '../images/spirit_hollow_photo.jpg';
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
+  const [strokes, setStrokes] = useState<StrokeScore[]>([]);
 
   const fetchMatches = async () => {
     try {
@@ -44,9 +45,17 @@ export default function App() {
     } catch {}
   };
 
+  const fetchStrokes = async () => {
+    try {
+      const res = await fetch('/api/strokes');
+      if (res.ok) setStrokes(await res.json());
+    } catch {}
+  };
+
   useEffect(() => {
     fetchMatches();
-    const id = setInterval(fetchMatches, 30000);
+    fetchStrokes();
+    const id = setInterval(() => { fetchMatches(); fetchStrokes(); }, 30000);
     return () => clearInterval(id);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -134,8 +143,8 @@ export default function App() {
           >
             {activeTab === 'home' && <HomeView bluePoints={bluePoints} pinkPoints={pinkPoints} />}
             {activeTab === 'crew' && <CrewView />}
-            {activeTab === 'leaderboard' && <LeaderboardView matches={matches} />}
-            {activeTab === 'matchups' && <MatchupsView matches={matches} handicapMap={Object.fromEntries(CREW.map(p => [p.name.split(' ').pop()!, p.handicap]))} onMatchUpdate={fetchMatches} />}
+            {activeTab === 'leaderboard' && <LeaderboardView matches={matches} strokes={strokes} />}
+            {activeTab === 'matchups' && <MatchupsView matches={matches} handicapMap={Object.fromEntries(CREW.map(p => [p.name.split(' ').pop()!, p.handicap]))} onMatchUpdate={fetchMatches} onStrokeUpdate={fetchStrokes} />}
             {activeTab === 'schedule' && <ScheduleView />}
             {activeTab === 'rules' && <RulesView />}
             {activeTab === 'archive' && <ArchiveView />}
@@ -255,7 +264,23 @@ function HomeView({ bluePoints, pinkPoints }: { bluePoints: number, pinkPoints: 
   );
 }
 
-function LeaderboardView({ matches }: { matches: Match[] }) {
+const PLAYER_TEAMS: Record<string, 'Blue Hackers' | 'Pink Addicts'> = {
+  Swart: 'Blue Hackers', Thompson: 'Blue Hackers', Wakefield: 'Blue Hackers',
+  Fitzke: 'Blue Hackers', Rohrbaugh: 'Blue Hackers',
+  Sorum: 'Pink Addicts', Fabian: 'Pink Addicts', DeMarco: 'Pink Addicts',
+  Koehler: 'Pink Addicts', Kardell: 'Pink Addicts',
+};
+const ALL_PLAYERS = Object.keys(PLAYER_TEAMS);
+const COLUMN_SLOTS = [
+  { label: 'TF9', day: 'Thursday', session: 'Front 9' },
+  { label: 'TB9', day: 'Thursday', session: 'Back 9' },
+  { label: 'FF9', day: 'Friday',   session: 'Front 9' },
+  { label: 'FB9', day: 'Friday',   session: 'Back 9' },
+  { label: 'SF9', day: 'Saturday', session: 'Front 9' },
+  { label: 'SB9', day: 'Saturday', session: 'Back 9' },
+];
+
+function LeaderboardView({ matches, strokes }: { matches: Match[], strokes: StrokeScore[] }) {
   const days = ['Thursday', 'Friday', 'Saturday'];
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
@@ -280,6 +305,31 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
     setExpandedDay(prev => (prev === day ? null : day));
   };
 
+  const playerRows = ALL_PLAYERS.map(player => {
+    const playerStrokes = strokes.filter(s => s.player === player);
+    const slotScores = COLUMN_SLOTS.map(slot => {
+      const slotMatchIds = matches
+        .filter(m => m.day === slot.day && m.session === slot.session)
+        .map(m => m.id);
+      const stroke = playerStrokes.find(s => slotMatchIds.includes(s.match_id));
+      if (!stroke) return null;
+      return stroke.match_type === '1v1' ? (stroke.net ?? stroke.gross) : stroke.gross;
+    });
+    const validScores = slotScores.filter((s): s is number => s !== null);
+    let average: number | null = null;
+    if (validScores.length > 0) {
+      const sorted = [...validScores].sort((a, b) => a - b);
+      const forAvg = validScores.length >= 2 ? sorted.slice(0, sorted.length - 1) : sorted;
+      average = forAvg.reduce((a, b) => a + b, 0) / forAvg.length;
+    }
+    return { player, team: PLAYER_TEAMS[player], slotScores, average };
+  }).sort((a, b) => {
+    if (a.average === null && b.average === null) return 0;
+    if (a.average === null) return 1;
+    if (b.average === null) return -1;
+    return a.average - b.average;
+  });
+
   const renderMatchRows = (day: string) => {
     const dayMatches = getDayMatches(day);
     if (dayMatches.length === 0) {
@@ -298,37 +348,63 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
           const blueLabel = match.team_blue_players.join(' + ');
           const pinkLabel = match.team_pink_players.join(' + ');
           return (
-            <div key={match.id} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[8px] font-mono uppercase tracking-widest opacity-30 w-14">{match.session}</span>
-                <span className="text-[8px] font-mono uppercase bg-white/10 px-1.5 py-0.5 rounded opacity-50">{match.match_type}</span>
-              </div>
-              <div className="flex-1 flex items-center gap-3 min-w-0">
-                <span className={`text-sm font-semibold truncate flex-1 text-right ${blueWon ? 'text-blue-400' : 'opacity-50'}`}>
-                  {blueLabel}
-                </span>
-                <div className="shrink-0 text-center">
-                  <span className={`font-mono text-base font-bold ${blueWon ? 'text-blue-400' : 'opacity-40'}`}>{match.blue_score}</span>
-                  <span className="font-mono text-xs opacity-20 mx-1">–</span>
-                  <span className={`font-mono text-base font-bold ${pinkWon ? 'text-pink-400' : 'opacity-40'}`}>{match.pink_score}</span>
+            <React.Fragment key={match.id}>
+              <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[8px] font-mono uppercase tracking-widest opacity-30 w-14">{match.session}</span>
+                  <span className="text-[8px] font-mono uppercase bg-white/10 px-1.5 py-0.5 rounded opacity-50">{match.match_type}</span>
                 </div>
-                <span className={`text-sm font-semibold truncate flex-1 ${pinkWon ? 'text-pink-400' : 'opacity-50'}`}>
-                  {pinkLabel}
-                </span>
+                <div className="flex-1 flex items-center gap-3 min-w-0">
+                  <span className={`text-sm font-semibold truncate flex-1 text-right ${blueWon ? 'text-blue-400' : 'opacity-50'}`}>
+                    {blueLabel}
+                  </span>
+                  <div className="shrink-0 text-center">
+                    <span className={`font-mono text-base font-bold ${blueWon ? 'text-blue-400' : 'opacity-40'}`}>{match.blue_score}</span>
+                    <span className="font-mono text-xs opacity-20 mx-1">–</span>
+                    <span className={`font-mono text-base font-bold ${pinkWon ? 'text-pink-400' : 'opacity-40'}`}>{match.pink_score}</span>
+                  </div>
+                  <span className={`text-sm font-semibold truncate flex-1 ${pinkWon ? 'text-pink-400' : 'opacity-50'}`}>
+                    {pinkLabel}
+                  </span>
+                </div>
+                <div className="shrink-0 flex items-center gap-2">
+                  <span className={`text-[8px] font-mono uppercase px-2 py-0.5 rounded font-bold ${
+                    blueWon ? 'bg-blue-500/20 text-blue-400' :
+                    pinkWon ? 'bg-pink-500/20 text-pink-400' :
+                    'bg-white/10 opacity-40'
+                  }`}>
+                    {isDraw ? 'Draw' : blueWon ? 'Blue Win' : 'Pink Win'}
+                  </span>
+                  {match.match_context && (
+                    <span className="text-[9px] font-mono opacity-30">{match.match_context}</span>
+                  )}
+                </div>
               </div>
-              <div className="shrink-0 flex items-center gap-2">
-                <span className={`text-[8px] font-mono uppercase px-2 py-0.5 rounded font-bold ${
-                  blueWon ? 'bg-blue-500/20 text-blue-400' :
-                  pinkWon ? 'bg-pink-500/20 text-pink-400' :
-                  'bg-white/10 opacity-40'
-                }`}>
-                  {isDraw ? 'Draw' : blueWon ? 'Blue Win' : 'Pink Win'}
-                </span>
-                {match.match_context && (
-                  <span className="text-[9px] font-mono opacity-30">{match.match_context}</span>
-                )}
-              </div>
-            </div>
+              {(() => {
+                const matchStrokes = strokes.filter(s => s.match_id === match.id);
+                if (matchStrokes.length === 0) return null;
+                if (match.match_type === '1v1') {
+                  return (
+                    <div className="px-6 pb-3 flex gap-6 flex-wrap border-t border-white/5">
+                      {matchStrokes.map(s => (
+                        <span key={s.player} className="text-[10px] font-mono opacity-40">
+                          {s.player}: {s.gross} → {s.net}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                } else {
+                  const blueScore = matchStrokes.find(s => match.team_blue_players.includes(s.player));
+                  const pinkScore = matchStrokes.find(s => match.team_pink_players.includes(s.player));
+                  return (
+                    <div className="px-6 pb-3 flex gap-6 flex-wrap border-t border-white/5">
+                      {blueScore && <span className="text-[10px] font-mono text-blue-400/50">Blue: {blueScore.gross}</span>}
+                      {pinkScore && <span className="text-[10px] font-mono text-pink-400/50">Pink: {pinkScore.gross}</span>}
+                    </div>
+                  );
+                }
+              })()}
+            </React.Fragment>
           );
         })}
       </div>
@@ -338,8 +414,11 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
   return (
     <div className="space-y-8">
       <div className="glass-panel rounded-3xl overflow-hidden">
-        <div className="grid grid-cols-5 p-6 bg-white/5 font-mono text-[10px] uppercase tracking-widest border-b border-white/10">
-          <div className="col-span-2">Team Name</div>
+        <div className="px-6 py-4 bg-white/5 border-b border-white/10">
+          <h3 className="text-sm font-display font-bold uppercase tracking-tight">Team Leaderboard</h3>
+        </div>
+        <div className="grid grid-cols-5 px-6 py-2 bg-white/5 font-mono text-[12px] uppercase tracking-widest border-b border-white/10 opacity-40">
+          <div className="col-span-2"></div>
           <div className="text-center">Thu</div>
           <div className="text-center">Fri</div>
           <div className="text-center">Sat</div>
@@ -464,11 +543,47 @@ function LeaderboardView({ matches }: { matches: Match[] }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="glass-panel rounded-3xl overflow-hidden">
+        <div className="px-6 py-4 bg-white/5 border-b border-white/10">
+          <h3 className="text-sm font-display font-bold uppercase tracking-tight">Individual Leaderboard</h3>
+          <p className="text-[10px] font-mono opacity-30 mt-0.5">Net for 1v1 · Gross for 2v2 · Avg = best 5 of 6 (drop highest)</p>
+        </div>
+        <div className="overflow-x-auto">
+          <div className="min-w-[520px]">
+            <div className="grid grid-cols-[2rem_1fr_repeat(6,3rem)_3.5rem] gap-x-1 px-4 py-2 bg-white/5 border-b border-white/10 text-[9px] font-mono uppercase tracking-widest opacity-40">
+              <div></div>
+              <div>Player Name</div>
+              {COLUMN_SLOTS.map(s => <div key={s.label} className="text-center">{s.label}</div>)}
+              <div className="text-right">Avg.</div>
+            </div>
+            <div className="divide-y divide-white/5">
+              {playerRows.map((row, i) => (
+                <div key={row.player} className="grid grid-cols-[2rem_1fr_repeat(6,3rem)_3.5rem] gap-x-1 px-4 py-3 items-center hover:bg-white/[0.02]">
+                  <span className="text-[10px] font-mono opacity-30">{i + 1}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${row.team === 'Blue Hackers' ? 'bg-blue-500' : 'bg-pink-500'}`} />
+                    <span className="text-sm font-semibold truncate">{row.player}</span>
+                  </div>
+                  {row.slotScores.map((score, j) => (
+                    <div key={j} className="text-center text-xs font-mono">
+                      {score !== null ? score : <span className="opacity-20">—</span>}
+                    </div>
+                  ))}
+                  <div className="text-right text-sm font-mono font-bold">
+                    {row.average !== null ? row.average.toFixed(1) : '—'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[], handicapMap: Record<string, number>, onMatchUpdate: () => void }) {
+function MatchupsView({ matches, handicapMap, onMatchUpdate, onStrokeUpdate }: { matches: Match[], handicapMap: Record<string, number>, onMatchUpdate: () => void, onStrokeUpdate: () => void }) {
   const [selectedDay, setSelectedDay] = useState<'Thursday' | 'Friday' | 'Saturday'>('Thursday');
   const [openPanelId, setOpenPanelId] = useState<number | null>(null);
   const [pin, setPin] = useState(() => sessionStorage.getItem('scoring-pin') || '');
@@ -478,6 +593,10 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [matchContext, setMatchContext] = useState('');
+  const [blueGross, setBlueGross] = useState('');
+  const [pinkGross, setPinkGross] = useState('');
+  const [strokeSaving, setStrokeSaving] = useState(false);
+  const [strokeMsg, setStrokeMsg] = useState('');
 
   const front9Matches = matches.filter(m => m.day === selectedDay && m.session === 'Front 9');
   const back9Matches = matches.filter(m => m.day === selectedDay && m.session === 'Back 9');
@@ -543,6 +662,37 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
       onMatchUpdate();
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleStrokes = async (matchId: number, match: Match) => {
+    setStrokeMsg('');
+    setStrokeSaving(true);
+    const bg = parseInt(blueGross, 10);
+    const pg = parseInt(pinkGross, 10);
+    if (isNaN(bg) || bg < 27 || bg > 72) { setStrokeMsg('Invalid blue score (27–72)'); setStrokeSaving(false); return; }
+    if (isNaN(pg) || pg < 27 || pg > 72) { setStrokeMsg('Invalid pink score (27–72)'); setStrokeSaving(false); return; }
+
+    const scores: { player: string; gross: number }[] = [];
+    if (match.match_type === '1v1') {
+      scores.push({ player: match.team_blue_players[0], gross: bg });
+      scores.push({ player: match.team_pink_players[0], gross: pg });
+    } else {
+      match.team_blue_players.forEach(p => scores.push({ player: p, gross: bg }));
+      match.team_pink_players.forEach(p => scores.push({ player: p, gross: pg }));
+    }
+    try {
+      const res = await fetch(`/api/matches/${matchId}/strokes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, scores }),
+      });
+      if (res.status === 401) { setStrokeMsg('Wrong PIN'); return; }
+      if (!res.ok) { setStrokeMsg('Error saving scores'); return; }
+      setStrokeMsg('Saved!');
+      onStrokeUpdate();
+    } finally {
+      setStrokeSaving(false);
     }
   };
 
@@ -641,7 +791,7 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
             )}
 
             <button
-              onClick={() => { setOpenPanelId(isOpen ? null : match.id); setErrorMsg(''); setMatchContext(''); }}
+              onClick={() => { setOpenPanelId(isOpen ? null : match.id); setErrorMsg(''); setMatchContext(''); setBlueGross(''); setPinkGross(''); setStrokeMsg(''); }}
               className="mt-1 text-[8px] font-mono text-white hover:text-white/80 transition-colors uppercase"
             >
               {status === 'final' ? 'Edit' : 'Update'}
@@ -737,6 +887,56 @@ function MatchupsView({ matches, handicapMap, onMatchUpdate }: { matches: Match[
                   Pink Wins
                 </button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-mono uppercase text-white/30 border-b border-white/10 pb-1">Stroke Scores (Gross)</p>
+              {match.team_blue_players.length === 0 ? (
+                <p className="text-[10px] font-mono opacity-30 italic">Players not yet assigned</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <label className="text-xs font-mono text-blue-400 w-28">
+                      {match.match_type === '1v1' ? match.team_blue_players[0] : 'Blue Team'}
+                    </label>
+                    <input
+                      type="number"
+                      value={blueGross}
+                      onChange={e => setBlueGross(e.target.value)}
+                      placeholder="Gross"
+                      min={27}
+                      max={72}
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm font-mono text-white w-20 focus:outline-none focus:border-white/40"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <label className="text-xs font-mono text-pink-400 w-28">
+                      {match.match_type === '1v1' ? match.team_pink_players[0] : 'Pink Team'}
+                    </label>
+                    <input
+                      type="number"
+                      value={pinkGross}
+                      onChange={e => setPinkGross(e.target.value)}
+                      placeholder="Gross"
+                      min={27}
+                      max={72}
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm font-mono text-white w-20 focus:outline-none focus:border-white/40"
+                    />
+                  </div>
+                  {strokeMsg && (
+                    <p className={`text-xs font-mono ${strokeMsg === 'Saved!' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {strokeMsg}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => handleStrokes(match.id, match)}
+                    disabled={strokeSaving}
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-[10px] font-mono uppercase text-white/60 hover:text-white transition-all disabled:opacity-30"
+                  >
+                    {strokeSaving ? '...' : 'Save Scores'}
+                  </button>
+                </>
+              )}
             </div>
 
             {status === 'final' && (

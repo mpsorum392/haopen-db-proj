@@ -22,6 +22,14 @@ export interface Match {
   match_context?: string | null;
 }
 
+export interface StrokeScore {
+  match_id:   number;
+  player:     string;
+  gross:      number;
+  net:        number | null;
+  match_type: '1v1' | '2v2';
+}
+
 export type TabType = 'home' | 'crew' | 'leaderboard' | 'matchups' | 'schedule' | 'rules' | 'archive';
 
 export interface ArchiveTeam {
