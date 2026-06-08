@@ -139,9 +139,7 @@ export function registerApiRoutes(app) {
         match_id:   r.match_id,
         player:     r.player,
         gross:      parseInt(r.gross, 10),
-        net:        r.match_type === '1v1'
-                      ? parseInt(r.gross, 10) - Math.round((HANDICAPS[r.player] ?? 0) / 2)
-                      : null,
+        net:        parseInt(r.gross, 10) - Math.floor((HANDICAPS[r.player] ?? 0) / 2),
         match_type: r.match_type,
       }));
       res.json(rows);

@@ -313,7 +313,7 @@ function LeaderboardView({ matches, strokes }: { matches: Match[], strokes: Stro
         .map(m => m.id);
       const stroke = playerStrokes.find(s => slotMatchIds.includes(s.match_id));
       if (!stroke) return null;
-      return stroke.match_type === '1v1' ? (stroke.net ?? stroke.gross) : stroke.gross;
+      return stroke.net ?? stroke.gross;
     });
     const validScores = slotScores.filter((s): s is number => s !== null);
     let average: number | null = null;
@@ -547,7 +547,7 @@ function LeaderboardView({ matches, strokes }: { matches: Match[], strokes: Stro
       <div className="glass-panel rounded-3xl overflow-hidden">
         <div className="px-6 py-4 bg-white/5 border-b border-white/10">
           <h3 className="text-sm font-display font-bold uppercase tracking-tight">Individual Leaderboard</h3>
-          <p className="text-[10px] font-mono opacity-30 mt-0.5">Net for 1v1 · Gross for 2v2 · Avg = best 5 of 6 (drop highest)</p>
+          <p className="text-[10px] font-mono opacity-30 mt-0.5">Net for all matches · Handicap ÷ 2 (floor) · Avg = best 5 of 6 (drop highest)</p>
         </div>
         <div className="overflow-x-auto">
           <div className="min-w-[520px]">
