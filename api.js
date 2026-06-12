@@ -1,8 +1,8 @@
 import { pool } from './db.js';
 
 const HANDICAPS = {
-  Swart: 4, Thompson: 9, Wakefield: 11, Fitzke: 12, Rohrbaugh: 14,
-  Sorum: 7, Fabian: 12, DeMarco: 16, Koehler: 18, Kardell: 20,
+  Swart: 6, Thompson: 12, Wakefield: 12, Fitzke: 9, Rohrbaugh: 14,
+  Sorum: 9, Fabian: 14, DeMarco: 15, Koehler: 18, Kardell: 20,
 };
 
 function parseMatch(row) {
