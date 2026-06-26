@@ -1082,10 +1082,10 @@ const CREW: CrewMember[] = [
   { name: 'Karl Rohrbaugh',  nickname: 'Life',                 handicap: 14, age: 51, phone: '(402) 301-3481', team: 'Blue Hackers',  image: karlPic,   likes: ['Traveling to new places', 'Afternoon naps', 'High-thread-count sheets', 'Setting phone to DND'], dislikes: ['Tangled cords', 'Bad IKEA instructions', 'Quadruple bogeys on short par 4s'] },
   // Pink Addicts
   { name: 'Mike Sorum',      nickname: 'Commish',              handicap: 9,  age: 45, phone: '(402) 616-7933', team: 'Pink Addicts',  image: mikePic,   likes: ['Making plans', 'Bossing people around', 'Buying golf gear', 'Angry tirades under his breath'], dislikes: ['People that do not follow his plans', 'Richards', 'Golf without gambling'] },
-  { name: 'Rob Fabian',      nickname: 'Drunk Dont Care',      handicap: 14, age: 44, phone: '(402) 980-5611', team: 'Pink Addicts',  image: robPic,    likes: ['Breadsticks','Sailor Jerry', 'Banana slices', 'Staircase slides'], dislikes: ['Diabetes','Fun haters', 'Virgin margaritas'] },
+  { name: 'Rob Fabian',      nickname: 'Drunk Dont Care',      handicap: 15, age: 44, phone: '(402) 980-5611', team: 'Pink Addicts',  image: robPic,    likes: ['Breadsticks','Sailor Jerry', 'Banana slices', 'Staircase slides'], dislikes: ['Diabetes','Fun haters', 'Virgin margaritas'] },
   { name: 'Kevin DeMarco',   nickname: 'Outs',                 handicap: 15, age: 40, phone: '(630) 335-6050', team: 'Pink Addicts',  image: kevinPic,  likes: ['Any chance to win on river', 'Building amazing simulators for his friends', 'Counting numbers'], dislikes: ['Breaking 90', 'Swinging less than 120%', 'Low limit BJ tables'] },
   { name: 'Kyle Koehler',    nickname: 'Killer',               handicap: 18, age: 45, phone: '(402) 540-1990', team: 'Pink Addicts',  image: kyleKPic,  likes: ['High paying contracts', 'Silencers', 'Long-range rifles', 'John Wick movies'], dislikes: ['Losing to Sorum', 'Jammed up firing pins', 'Antonio Banderas'] },
-  { name: 'Scott Kardell',   nickname: 'Chill',                handicap: 20, age: 56, phone: '(402) 981-7211', team: 'Pink Addicts',  image: scottPic,  likes: ['The beach', 'Slow jazz music', 'Ice tea', 'Thai massages'], dislikes: ["Eric's face", 'Frowning'] },
+  { name: 'Scott Kardell',   nickname: 'Chill',                handicap: 19, age: 56, phone: '(402) 981-7211', team: 'Pink Addicts',  image: scottPic,  likes: ['The beach', 'Slow jazz music', 'Ice tea', 'Thai massages'], dislikes: ["Eric's face", 'Frowning'] },
 ];
 
 function CrewView() {
