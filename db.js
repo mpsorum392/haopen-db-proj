@@ -26,11 +26,9 @@ const SEED_MATCHES = [
   { id: 15, day: 'Saturday', session: 'Front 9', match_type: '2v2', team_blue_players: ['Swart', 'Fitzke'],        team_pink_players: ['Sorum', 'DeMarco'] },
   { id: 16, day: 'Saturday', session: 'Front 9', match_type: '2v2', team_blue_players: ['Thompson', 'Rohrbaugh'],  team_pink_players: ['Fabian', 'Koehler'] },
   { id: 17, day: 'Saturday', session: 'Front 9', match_type: '1v1', team_blue_players: ['Wakefield'],              team_pink_players: ['Kardell'] },
-  { id: 18, day: 'Saturday', session: 'Back 9',  match_type: '1v1', team_blue_players: [],                         team_pink_players: [] },
-  { id: 19, day: 'Saturday', session: 'Back 9',  match_type: '1v1', team_blue_players: [],                         team_pink_players: [] },
-  { id: 20, day: 'Saturday', session: 'Back 9',  match_type: '1v1', team_blue_players: [],                         team_pink_players: [] },
-  { id: 21, day: 'Saturday', session: 'Back 9',  match_type: '1v1', team_blue_players: [],                         team_pink_players: [] },
-  { id: 22, day: 'Saturday', session: 'Back 9',  match_type: '1v1', team_blue_players: [],                         team_pink_players: [] },
+  { id: 18, day: 'Saturday', session: 'Back 9',  match_type: '2v2', team_blue_players: ['Rohrbaugh', 'Thompson'],  team_pink_players: ['Fabian', 'Koehler'] },
+  { id: 19, day: 'Saturday', session: 'Back 9',  match_type: '2v2', team_blue_players: ['Swart', 'Fitzke'],        team_pink_players: ['Sorum', 'Kardell'] },
+  { id: 20, day: 'Saturday', session: 'Back 9',  match_type: '1v1', team_blue_players: ['Wakefield'],              team_pink_players: ['DeMarco'] },
 ];
 
 export async function initDb() {
@@ -57,10 +55,16 @@ export async function initDb() {
     await pool.query(
       `INSERT INTO matches (id, day, session, match_type, team_blue_players, team_pink_players)
        VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
-       ON CONFLICT (id) DO NOTHING`,
+       ON CONFLICT (id) DO UPDATE SET
+         match_type = EXCLUDED.match_type,
+         team_blue_players = EXCLUDED.team_blue_players,
+         team_pink_players = EXCLUDED.team_pink_players`,
       [m.id, m.day, m.session, m.match_type, JSON.stringify(m.team_blue_players), JSON.stringify(m.team_pink_players)]
     );
   }
+
+  // Remove placeholder matches that are no longer part of the schedule
+  await pool.query(`DELETE FROM matches WHERE id IN (21, 22)`);
 
   await pool.query(`
     ALTER TABLE matches ADD COLUMN IF NOT EXISTS match_context VARCHAR(5)

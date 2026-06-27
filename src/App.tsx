@@ -219,7 +219,7 @@ function HomeView({ bluePoints, pinkPoints }: { bluePoints: number, pinkPoints: 
             <p className="text-[10px] font-mono uppercase opacity-60">Holes</p>
           </div>
           <div className="glass-panel p-6 rounded-3xl">
-            <p className="text-3xl font-display font-bold">22</p>
+            <p className="text-3xl font-display font-bold">20</p>
             <p className="text-[10px] font-mono uppercase opacity-60">Total Matches</p>
           </div>
         </div>
