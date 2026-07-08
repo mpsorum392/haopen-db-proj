@@ -31,7 +31,6 @@ import troyPic    from '../images/troy-new-pic.jpeg';
 import robPic     from '../images/rob-pic.jpeg';
 import haOpenLogo from '../images/ha_open_logo.jpg';
 import paigePic   from '../images/paige-pic.jpg';
-import spiritHollowPhoto from '../images/spirit_hollow_photo.jpg';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -161,20 +160,7 @@ function HomeView({ bluePoints, pinkPoints }: { bluePoints: number, pinkPoints: 
       <div className="space-y-8">
         <div className="mb-12">
           <h2 className="text-2xl font-display font-bold mb-3 tracking-tight">Hackers & Addicts Open</h2>
-          <p className={"text-emerald-500 font-mono uppercase tracking-widest text-xs"}>June 24th - 28th, 2026</p>
-        </div>
-
-        <div className="aspect-video rounded-3xl overflow-hidden border border-white/10 relative group">
-          <img
-            src={spiritHollowPhoto}
-            alt="Spirit Hollow"
-            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-          <div className="absolute bottom-6 left-6">
-            <p className="text-[10px] font-mono uppercase tracking-widest mb-1 opacity-50">Featured Course</p>
-            <h4 className="text-2xl font-display font-bold">Spirit Hollow (Hole #1)</h4>
-          </div>
+          <p className={"text-emerald-500 font-mono uppercase tracking-widest text-xs"}>June 10th - 13th, 2027</p>
         </div>
 
         <section className="glass-panel p-8 rounded-3xl">
@@ -182,8 +168,7 @@ function HomeView({ bluePoints, pinkPoints }: { bluePoints: number, pinkPoints: 
             Event Overview
           </h3>
           <p className="text-lg leading-relaxed opacity-60 mb-8">
-            Welcome to the 7th Annual Hackers & Addicts Open. 10 golfers, 2 teams, 3 days of grueling match play across Iowa's finest courses.
-            The Blue Hackers face off against the Pink Addicts in a quest for eternal glory.<br/>
+            Placeholder for the 8th Annual Hackers and Addicts Open. The event will be held June 10th-13th, 2027.<br/>
           </p>
             <p className="text-lg leading-relaxed opacity-60 mb-8">
             This event is about FUN!! Yes, there is a competition that we are playing for $50 across 3 rounds of golf so
@@ -193,33 +178,27 @@ function HomeView({ bluePoints, pinkPoints }: { bluePoints: number, pinkPoints: 
                 in the group you can find to do it (to a degree).<br/>
           </p>
           </section>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-              <p className="text-[10px] font-mono uppercase opacity-40">Thursday</p>
-              <p className="font-bold">Blue Top Ridge GC</p>
-              <p className="text-xs opacity-40">Riverside, IA</p>
-            </div>
-            <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-              <p className="text-[10px] font-mono uppercase opacity-40">Friday & Saturday</p>
-              <p className="font-bold">Spirit Hollow GC</p>
-              <p className="text-xs opacity-40">Burlington, IA</p>
+              <p className="text-[10px] font-mono uppercase opacity-40">Location & Courses</p>
+              <p className="font-bold">TBD</p>
             </div>
           </div>
           <div className="space-y-8">
         <div className="grid grid-cols-4 gap-4 text-center">
           <div className="glass-panel p-6 rounded-3xl">
-            <p className="text-3xl font-display font-bold">2</p>
+            <p className="text-3xl font-display font-bold">0</p>
             <p className="text-[10px] font-mono uppercase opacity-60">Courses</p>
           </div><div className="glass-panel p-6 rounded-3xl">
-            <p className="text-3xl font-display font-bold">3</p>
+            <p className="text-3xl font-display font-bold">0</p>
             <p className="text-[10px] font-mono uppercase opacity-60">Rounds</p>
           </div>
             <div className="glass-panel p-6 rounded-3xl">
-            <p className="text-3xl font-display font-bold">54</p>
+            <p className="text-3xl font-display font-bold">0</p>
             <p className="text-[10px] font-mono uppercase opacity-60">Holes</p>
           </div>
           <div className="glass-panel p-6 rounded-3xl">
-            <p className="text-3xl font-display font-bold">20</p>
+            <p className="text-3xl font-display font-bold">0</p>
             <p className="text-[10px] font-mono uppercase opacity-60">Total Matches</p>
           </div>
         </div>
@@ -236,13 +215,13 @@ function HomeView({ bluePoints, pinkPoints }: { bluePoints: number, pinkPoints: 
               </ul>
               Lodging Costs:
               <ul style={{ paddingLeft: '20px', listStyleType: 'disc' }}>
-                  <li>$175 for stay & play at Riverside</li>
-                  <li>$826 or $892 for 3 nights at Spirit Hollow</li>
+                  <li>1 night stay at X</li>
+                  <li>2 night stay at X</li>
               </ul>
               Green Fees:
               <ul style={{ paddingLeft: '20px', listStyleType: 'disc' }}>
-                  <li>Riverside: 1 round incl. - $55 is cost of replay</li>
-                  <li>Spirit Hollow: unlimited included in lodging cost</li>
+                  <li>Round of golf 1</li>
+                  <li>Round of golf 2</li>
               </ul>
               Travel cost (gas):
               <ul style={{ paddingLeft: '20px', listStyleType: 'disc' }}>
@@ -250,7 +229,7 @@ function HomeView({ bluePoints, pinkPoints }: { bluePoints: number, pinkPoints: 
               </ul>
               Total:
               <ul style={{ paddingLeft: '20px', listStyleType: 'disc' }}>
-                  <li>$1,116-1,237 of the best $$ you've ever spent</li>
+                  <li>$1200 of the best $$ you've ever spent</li>
               </ul>
           </p>
           </section>
@@ -1070,63 +1049,33 @@ interface CrewMember {
   image: string;
   likes: string[];
   dislikes: string[];
-  team: 'Blue Hackers' | 'Pink Addicts';
 }
 
 const CREW: CrewMember[] = [
-  // Blue Hackers
-  { name: 'Kyle Swart',      nickname: 'Super',                handicap: 6,  age: 40, phone: '(318) 245-9150', team: 'Blue Hackers',  image: swartPic,  likes: ['Turf care and feeding', 'Playing top 100 courses', 'Radon mitigation systems'], dislikes: ['Losing in anything to anyone', 'Poorly manicured fairways'] },
-  { name: 'Troy Thompson',   nickname: 'BM3',                  handicap: 12,  age: 47, phone: '(402) 598-4146', team: 'Blue Hackers',  image: troyPic,   likes: ['BMWs', 'Golf clubs from last century', 'Apples', 'Boobs'], dislikes: ['Dirty automobiles', 'Kids on payroll', 'Digesting food'] },
-  { name: 'Eric Wakefield',  nickname: 'Old Man',              handicap: 12, age: 57, phone: '(402) 779-1977', team: 'Blue Hackers',  image: ericPic,   likes: ['Monthly country club dues', 'Dinners at 4pm', 'Bocce Ball'], dislikes: ['Hip dips', 'That "Rap" music', 'Cellular phones'] },
-  { name: 'Jeff Fitzke',     nickname: 'Out of Bounds Right!', handicap: 9, age: 50, phone: '(402) 981-2314', team: 'Blue Hackers',  image: fitzkePic, likes: ['Raw steak', 'Green golf balls', 'The field of tall grass right of the deep rough'], dislikes: ['Being sober', 'Unchopped wood', 'Unopened wine bottles'] },
-  { name: 'Karl Rohrbaugh',  nickname: 'Life',                 handicap: 14, age: 51, phone: '(402) 301-3481', team: 'Blue Hackers',  image: karlPic,   likes: ['Traveling to new places', 'Afternoon naps', 'High-thread-count sheets', 'Setting phone to DND'], dislikes: ['Tangled cords', 'Bad IKEA instructions', 'Quadruple bogeys on short par 4s'] },
-  // Pink Addicts
-  { name: 'Mike Sorum',      nickname: 'Commish',              handicap: 9,  age: 45, phone: '(402) 616-7933', team: 'Pink Addicts',  image: mikePic,   likes: ['Making plans', 'Bossing people around', 'Buying golf gear', 'Angry tirades under his breath'], dislikes: ['People that do not follow his plans', 'Richards', 'Golf without gambling'] },
-  { name: 'Rob Fabian',      nickname: 'Drunk Dont Care',      handicap: 15, age: 44, phone: '(402) 980-5611', team: 'Pink Addicts',  image: robPic,    likes: ['Breadsticks','Sailor Jerry', 'Banana slices', 'Staircase slides'], dislikes: ['Diabetes','Fun haters', 'Virgin margaritas'] },
-  { name: 'Kevin DeMarco',   nickname: 'Outs',                 handicap: 15, age: 40, phone: '(630) 335-6050', team: 'Pink Addicts',  image: kevinPic,  likes: ['Any chance to win on river', 'Building amazing simulators for his friends', 'Counting numbers'], dislikes: ['Breaking 90', 'Swinging less than 120%', 'Low limit BJ tables'] },
-  { name: 'Kyle Koehler',    nickname: 'Killer',               handicap: 18, age: 45, phone: '(402) 540-1990', team: 'Pink Addicts',  image: kyleKPic,  likes: ['High paying contracts', 'Silencers', 'Long-range rifles', 'John Wick movies'], dislikes: ['Losing to Sorum', 'Jammed up firing pins', 'Antonio Banderas'] },
-  { name: 'Scott Kardell',   nickname: 'Chill',                handicap: 19, age: 56, phone: '(402) 981-7211', team: 'Pink Addicts',  image: scottPic,  likes: ['The beach', 'Slow jazz music', 'Ice tea', 'Thai massages'], dislikes: ["Eric's face", 'Frowning'] },
+  { name: 'Rob Fabian',      nickname: 'Drunk Dont Care',      handicap: 15, age: 44, phone: '(402) 980-5611', image: robPic,    likes: ['Breadsticks','Sailor Jerry', 'Banana slices', 'Staircase slides'], dislikes: ['Diabetes','Fun haters', 'Virgin margaritas'] },
+  { name: 'Eric Wakefield',  nickname: 'Old Man',              handicap: 12, age: 57, phone: '(402) 779-1977', image: ericPic,   likes: ['Monthly country club dues', 'Dinners at 4pm', 'Bocce Ball'], dislikes: ['Hip dips', 'That "Rap" music', 'Cellular phones'] },
+  { name: 'Mike Sorum',      nickname: 'Commish',              handicap: 9,  age: 45, phone: '(402) 616-7933', image: mikePic,   likes: ['Making plans', 'Bossing people around', 'Buying golf gear', 'Angry tirades under his breath'], dislikes: ['People that do not follow his plans', 'Richards', 'Golf without gambling'] },
+  { name: 'Karl Rohrbaugh',  nickname: 'Life',                 handicap: 14, age: 51, phone: '(402) 301-3481', image: karlPic,   likes: ['Traveling to new places', 'Afternoon naps', 'High-thread-count sheets', 'Setting phone to DND'], dislikes: ['Tangled cords', 'Bad IKEA instructions', 'Quadruple bogeys on short par 4s'] },
+  { name: 'Kyle Koehler',    nickname: 'Killer',               handicap: 18, age: 45, phone: '(402) 540-1990', image: kyleKPic,  likes: ['High paying contracts', 'Silencers', 'Long-range rifles', 'John Wick movies'], dislikes: ['Losing to Sorum', 'Jammed up firing pins', 'Antonio Banderas'] },
+  { name: 'Kyle Swart',      nickname: 'Super',                handicap: 6,  age: 40, phone: '(318) 245-9150', image: swartPic,  likes: ['Turf care and feeding', 'Playing top 100 courses', 'Radon mitigation systems'], dislikes: ['Losing in anything to anyone', 'Poorly manicured fairways'] },
+  { name: 'Scott Kardell',   nickname: 'Chill',                handicap: 19, age: 56, phone: '(402) 981-7211', image: scottPic,  likes: ['The beach', 'Slow jazz music', 'Ice tea', 'Thai massages'], dislikes: ["Eric's face", 'Frowning'] },
+  { name: 'Jeff Fitzke',     nickname: 'Out of Bounds Right!', handicap: 9, age: 50, phone: '(402) 981-2314', image: fitzkePic, likes: ['Raw steak', 'Green golf balls', 'The field of tall grass right of the deep rough'], dislikes: ['Being sober', 'Unchopped wood', 'Unopened wine bottles'] },
+  { name: 'Kevin DeMarco',   nickname: 'Outs',                 handicap: 15, age: 40, phone: '(630) 335-6050', image: kevinPic,  likes: ['Any chance to win on river', 'Building amazing simulators for his friends', 'Counting numbers'], dislikes: ['Breaking 90', 'Swinging less than 120%', 'Low limit BJ tables'] },
+  { name: 'Troy Thompson',   nickname: 'BM3',                  handicap: 12,  age: 47, phone: '(402) 598-4146', image: troyPic,   likes: ['BMWs', 'Golf clubs from last century', 'Apples', 'Boobs'], dislikes: ['Dirty automobiles', 'Kids on payroll', 'Digesting food'] },
 ];
 
 function CrewView() {
-  const blueTeam = CREW.filter(p => p.team === 'Blue Hackers');
-  const pinkTeam = CREW.filter(p => p.team === 'Pink Addicts');
-
   return (
     <div className="space-y-14">
       <div>
         <h2 className="text-3xl font-display font-bold tracking-tight">The Crew</h2>
-        <p className="text-emerald-500 font-mono uppercase tracking-widest text-xs mt-2">10 Golfers · 2 Teams · 1 Cup</p>
+        <p className="text-emerald-500 font-mono uppercase tracking-widest text-xs mt-2">10 Golfers · Teams TBD · 1 Cup</p>
       </div>
 
-      {/* Blue Hackers */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-          <h3 className="text-xl font-display font-bold text-blue-400 tracking-tight">Blue Hackers</h3>
-          <div className="h-px flex-1 bg-blue-500/20" />
-          <span className="text-xl font-mono text-blue-400/60 uppercase tracking-widest">HCP {blueTeam.reduce((s, p) => s + p.handicap, 0)}</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {blueTeam.map(player => (
-            <PlayerCard key={player.name} player={player} />
-          ))}
-        </div>
-      </div>
-
-      {/* Pink Addicts */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="w-3 h-3 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.6)]" />
-          <h3 className="text-xl font-display font-bold text-pink-400 tracking-tight">Pink Addicts</h3>
-          <div className="h-px flex-1 bg-pink-500/20" />
-          <span className="text-xl font-mono text-pink-400/60 uppercase tracking-widest">HCP {pinkTeam.reduce((s, p) => s + p.handicap, 0)}</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pinkTeam.map(player => (
-            <PlayerCard key={player.name} player={player} />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {CREW.map(player => (
+          <PlayerCard key={player.name} player={player} />
+        ))}
       </div>
     </div>
   );
@@ -1143,12 +1092,8 @@ function PlayerCard({ player }: { player: CrewMember }) {
           className="w-full h-full object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
-        <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest ${
-          player.team === 'Blue Hackers'
-            ? 'bg-blue-500/80 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]'
-            : 'bg-pink-500/80 text-white shadow-[0_0_10px_rgba(236,72,153,0.5)]'
-        }`}>
-          {player.team}
+        <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest bg-white/10 text-white/70">
+          Team TBD
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-6">
           <h3 className="text-2xl font-display font-bold leading-tight">{player.name}</h3>
@@ -1262,7 +1207,7 @@ function ArchiveView() {
           <BookOpen className="accent-text" />
           H&amp;A Open Archive
         </h2>
-        <p className="text-xs font-mono uppercase tracking-widest opacity-40">2020 – 2025 · Event History</p>
+        <p className="text-xs font-mono uppercase tracking-widest opacity-40">2020 – 2026 · Event History</p>
       </div>
 
       {/* Year Selector */}
